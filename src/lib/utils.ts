@@ -17,12 +17,24 @@ export function truncate(str: string, maxLength: number): string {
   return str.slice(0, maxLength).replace(/\s+\S*$/, '') + '…'
 }
 
-/** Build a Payload media URL from a relative path */
+/** Build a Payload media URL, ensuring local URLs are relative for Next.js Image SSRF protection */
 export function getMediaUrl(url?: string | null): string {
   if (!url) return ''
+  
+  // Convert absolute localhost URLs to relative paths
+  if (url.startsWith('http://localhost') || url.startsWith('https://localhost')) {
+    try {
+      return new URL(url).pathname
+    } catch {
+      return url
+    }
+  }
+  
+  // Preserve remote absolute URLs (e.g., S3, Cloudinary)
   if (url.startsWith('http')) return url
-  const base = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'
-  return `${base}${url}`
+  
+  // Keep relative URLs relative so Next.js Image component handles them natively
+  return url
 }
 
 /** Get YouTube thumbnail URL from video ID */

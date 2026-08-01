@@ -30,7 +30,7 @@ const db = usePostgres
   : sqliteAdapter({ client: { url: process.env.DATABASE_URL ?? 'file:./payload.db' } })
 
 export default buildConfig({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000',
+  serverURL: process.env.NODE_ENV === 'development' ? '' : (process.env.NEXT_PUBLIC_SERVER_URL || ''),
   secret:    process.env.PAYLOAD_SECRET ?? 'your-secret-key',
 
   admin: {
