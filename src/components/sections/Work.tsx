@@ -1,13 +1,14 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import { useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Play, X } from 'lucide-react'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { getMediaUrl } from '@/lib/utils'
 import { SkeletonProjectRow } from '@/components/ui/SkeletonCard'
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 
 interface ProjectData {
   id: string
@@ -15,10 +16,13 @@ interface ProjectData {
   slug: string
   category?: string | null
   year?: number | null
-  description?: string | null
   thumbnail?: { url?: string | null; alt?: string | null } | null
   tags?: Array<{ tag?: string | null }> | null
   youtubeUrl?: string | null
+  showOnHomepage?: boolean | null
+  order?: number | null
+  index?: number | null
+  accentColor?: string | null
 }
 
 interface WorkProps {
@@ -35,48 +39,41 @@ function getYouTubeEmbedUrl(url?: string | null) {
 }
 
 export function Work({ projects }: WorkProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null)
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  })
+  const gridItems = useMemo(
+    () => projects.filter((p) => p.showOnHomepage).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [projects]
+  )
 
-  if (projects.length === 0) return null
+  if (gridItems.length === 0) return null
 
   return (
-    <section id="work" className="section relative" aria-label="Selected Work">
-      <div className="container relative z-10">
+    <section id="work" className="section" aria-label="Selected Work">
+      <div className="container">
         <hr className="divider mb-20" />
-        <div className="flex items-baseline justify-between mb-16">
+        <div className="flex items-baseline justify-between mb-12 md:mb-16">
           <div>
             <SectionLabel>Selected Work</SectionLabel>
             <h2 className="text-[clamp(28px,4vw,48px)] font-semibold text-neutral-50 tracking-tight leading-tight mt-2">
               Project Archive
             </h2>
           </div>
-          <span className="font-mono italic text-xs text-neutral-800 tracking-wider">
-            {String(projects.length).padStart(2, '0')} projects
+          <span className="font-mono italic text-xs text-neutral-600 tracking-wider">
+            {String(gridItems.length).padStart(2, '0')} projects
           </span>
         </div>
-      </div>
 
-      <div ref={containerRef} className="container relative pb-32">
-        {projects.map((project, i) => {
-          const targetScale = 1 - (projects.length - i) * 0.05
-          return (
-            <Card
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          {gridItems.map((project, i) => (
+            <ProjectCard
               key={project.id}
               project={project}
               i={i}
-              progress={scrollYProgress}
-              range={[i * 0.25, 1]}
-              targetScale={targetScale}
               onOpenVideo={(url) => setActiveVideo({ url, title: project.title })}
             />
-          )
-        })}
+          ))}
+        </div>
       </div>
 
       <AnimatePresence>
@@ -91,15 +88,15 @@ export function Work({ projects }: WorkProps) {
             />
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-5xl aspect-video bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-2xl z-10"
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-full max-w-5xl aspect-video bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl z-10"
             >
               <button
                 onClick={() => setActiveVideo(null)}
-                className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-neutral-900/80 border border-neutral-700 text-neutral-300 flex items-center justify-center hover:bg-white hover:text-black transition-all"
+                className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-neutral-900/80 border border-neutral-700 text-neutral-300 flex items-center justify-center hover:bg-white hover:text-black transition-colors"
                 aria-label="Close video"
               >
                 <X className="w-5 h-5" />
@@ -120,116 +117,99 @@ export function Work({ projects }: WorkProps) {
   )
 }
 
-function Card({
+function ProjectCard({
   project,
   i,
-  progress,
-  range,
-  targetScale,
   onOpenVideo,
 }: {
   project: ProjectData
   i: number
-  progress: any
-  range: number[]
-  targetScale: number
   onOpenVideo: (embedUrl: string) => void
 }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const scale = useTransform(progress, range, [1, targetScale])
+  const reducedMotion = useReducedMotion()
   const imageUrl = project.thumbnail?.url ? getMediaUrl(project.thumbnail.url) : ''
   const embedUrl = getYouTubeEmbedUrl(project.youtubeUrl)
+  const displayIndex = project.index ?? i + 1
+  const accent = project.accentColor || undefined
 
   return (
-    <div
-      ref={containerRef}
-      className="sticky top-24 flex items-center justify-center min-h-[70vh] mb-24"
+    <motion.article
+      initial={reducedMotion ? {} : { opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="group flex flex-col"
     >
-      <motion.div
-        style={{ scale }}
-        className="w-full h-full bg-neutral-900/90 border border-neutral-800 rounded-3xl p-8 md:p-12 backdrop-blur-md flex flex-col md:flex-row gap-8 md:gap-16 shadow-2xl"
+      {/* Media — 16:9 video-player-style frame */}
+      <div
+        onClick={() => embedUrl && onOpenVideo(embedUrl)}
+        className={`relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-800 transition-all duration-300 ease-in-out group-hover:border-neutral-700 group-hover:-translate-y-1 ${
+          embedUrl ? 'cursor-pointer' : ''
+        }`}
       >
-        <div className="flex-1 flex flex-col justify-between">
-          <div>
-            <span className="font-mono italic text-xs text-neutral-500 uppercase tracking-widest mb-4 block">
-              {String(i + 1).padStart(2, '0')} — {project.category ?? 'Project'}
-            </span>
-            <h3 className="text-3xl md:text-5xl font-semibold text-neutral-50 mb-6 leading-tight">
-              {project.title}
-            </h3>
-            {project.description && (
-              <p className="text-neutral-400 text-lg leading-relaxed mb-8 max-w-xl">
-                {project.description}
-              </p>
-            )}
-            {project.tags && project.tags.length > 0 && (
-              <div className="flex flex-wrap gap-3 mb-8">
-                {project.tags.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="px-4 py-2 rounded-full border border-neutral-800 text-xs text-neutral-400 bg-neutral-900/50"
-                  >
-                    {t.tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-4 flex-wrap">
-            <Link
-              href={`/projects/${project.slug}`}
-              className="inline-flex items-center gap-3 text-neutral-50 hover:text-white transition-colors w-fit group"
-            >
-              <span className="font-medium">View Case Study</span>
-              <span className="w-10 h-10 rounded-full border border-neutral-700 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
-                <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
+        {imageUrl ? (
+          <>
+            <Image
+              src={imageUrl}
+              alt={project.thumbnail?.alt ?? project.title}
+              fill
+              className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
 
             {embedUrl && (
-              <button
-                onClick={() => onOpenVideo(embedUrl)}
-                className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white text-white hover:text-black border border-white/20 transition-all text-sm font-medium"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                Watch Demo
-              </button>
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="w-11 h-11 rounded-full bg-white/95 text-black flex items-center justify-center">
+                  <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                </div>
+              </div>
             )}
+
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
+              {accent && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} aria-hidden />}
+              <span className="font-mono italic text-[10px] text-neutral-200 tracking-widest">
+                {String(displayIndex).padStart(2, '0')}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-neutral-700 font-mono text-xs">
+            NO IMAGE
           </div>
+        )}
+      </div>
+
+      {/* Meta row */}
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <span className="font-mono italic text-[11px] text-neutral-500 uppercase tracking-widest block mb-1.5">
+            {project.category ?? 'Project'}
+            {project.year ? ` · ${project.year}` : ''}
+          </span>
+          <h3 className="text-lg md:text-xl font-semibold text-neutral-50 leading-snug tracking-tight truncate transition-colors duration-200 group-hover:text-white">
+            {project.title}
+          </h3>
         </div>
 
-        <div
-          onClick={() => embedUrl && onOpenVideo(embedUrl)}
-          className={`flex-1 relative rounded-2xl overflow-hidden aspect-video md:aspect-auto bg-neutral-950 border border-neutral-800 group ${
-            embedUrl ? 'cursor-pointer' : ''
-          }`}
+        <Link
+          href={`/projects/${project.slug}`}
+          aria-label={`View case study: ${project.title}`}
+          className="shrink-0 w-8 h-8 mt-0.5 rounded-full border border-neutral-800 text-neutral-400 flex items-center justify-center transition-all duration-300 ease-in-out group-hover:border-neutral-600 group-hover:text-neutral-50 group-hover:translate-x-0.5"
         >
-          {imageUrl ? (
-            <>
-              <Image
-                src={imageUrl}
-                alt={project.thumbnail?.alt ?? project.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-              {embedUrl && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
-                  <div className="w-16 h-16 rounded-full bg-white/90 text-black flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                    <Play className="w-6 h-6 fill-current ml-1" />
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-neutral-700 font-mono text-xs">
-              NO IMAGE
-            </div>
-          )}
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      {project.tags && project.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {project.tags.slice(0, 4).map((t, idx) => (
+            <span key={idx} className="px-2.5 py-1 rounded-full border border-neutral-800 text-[10px] text-neutral-500">
+              {t.tag}
+            </span>
+          ))}
         </div>
-      </motion.div>
-    </div>
+      )}
+    </motion.article>
   )
 }
 
@@ -239,8 +219,8 @@ export function WorkSkeleton() {
       <div className="container">
         <hr className="divider mb-20" />
         <SectionLabel>Selected Work</SectionLabel>
-        <div className="mt-12">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          {Array.from({ length: 6 }).map((_, i) => (
             <SkeletonProjectRow key={i} />
           ))}
         </div>

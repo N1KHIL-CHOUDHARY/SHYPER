@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { SectionLabel } from '@/components/ui/SectionLabel'
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 
 interface WorkflowStep {
   title: string
@@ -16,63 +17,146 @@ interface WorkflowData {
 
 export function Workflow({ data }: { data: WorkflowData }) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
+  const steps = data.steps ?? []
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
+    offset: ['start 75%', 'end 40%'],
   })
 
-  const x = useTransform(scrollYProgress, [0, 1], ['0%', '-65%'])
-  const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1])
-  const steps = data.steps ?? []
+  const lineHeight = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
 
   if (steps.length === 0) return null
 
   return (
-    <section id="workflow" className="relative h-[300vh]" ref={containerRef} aria-label="My Process">
-      <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center py-24 bg-black">
-        <div className="container mb-20 shrink-0">
-          <SectionLabel>Process</SectionLabel>
-          <h2 className="text-[clamp(28px,4vw,48px)] font-semibold text-neutral-50 tracking-tight leading-tight mt-2">
-            {data.heading ?? 'My Process'}
-          </h2>
-        </div>
-
-        <motion.div
-          style={{ x }}
-          className="flex items-start gap-16 md:gap-24 px-4 md:px-8 xl:px-[10vw] w-max"
+    <section id="workflow" className="section" aria-label="My Process">
+      <div className="container">
+        <hr className="divider" style={{ marginBottom: 80 }} />
+        <SectionLabel>Process</SectionLabel>
+        <h2
+          style={{
+            fontSize: 'clamp(28px, 4vw, 48px)',
+            fontWeight: 600,
+            color: '#FAFAFA',
+            letterSpacing: '-0.03em',
+            marginBottom: 64,
+            marginTop: 8,
+          }}
         >
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className="w-[260px] md:w-[340px] shrink-0 flex flex-col"
-            >
-              <span
-                className="font-mono text-7xl md:text-9xl font-bold leading-none mb-10 text-transparent"
-                style={{ WebkitTextStroke: '1px rgb(64 64 64)' }}
-              >
-                {String(index + 1).padStart(2, '0')}
-              </span>
+          {data.heading ?? 'My Process'}
+        </h2>
 
-              {/* connector node + line segment */}
-              <div className="relative h-px w-full bg-neutral-800 mb-8">
-                <span className="absolute -top-[3px] left-0 w-[7px] h-[7px] rounded-full bg-neutral-600" />
-                {index === 0 && (
-                  <motion.div
-                    style={{ scaleX: lineScale }}
-                    className="absolute inset-0 bg-neutral-50 origin-left"
-                  />
-                )}
-              </div>
+        <div ref={containerRef} style={{ position: 'relative' }}>
+          {/* base rail */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 19,
+              top: 8,
+              bottom: 8,
+              width: 1,
+              background: '#2A2A2A',
+            }}
+            aria-hidden="true"
+          />
+          {/* fill rail — the one scroll animation */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              left: 19,
+              top: 8,
+              width: 1,
+              height: reducedMotion ? '100%' : lineHeight,
+              background: '#FAFAFA',
+              transformOrigin: 'top',
+            }}
+            aria-hidden="true"
+          />
 
-              <h3 className="text-xl md:text-2xl font-semibold text-neutral-50 mb-3 tracking-tight">
-                {step.title}
-              </h3>
-              <p className="text-neutral-500 leading-relaxed text-sm md:text-[15px]">
-                {step.description}
-              </p>
-            </div>
-          ))}
-        </motion.div>
+          <div>
+            {steps.map((step, index) => (
+              <Step key={index} index={index} step={step} isLast={index === steps.length - 1} />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
+  )
+}
+
+function Step({ step, index, isLast }: { step: WorkflowStep; index: number; isLast: boolean }) {
+  return (
+    <div
+      className="workflow-step"
+      style={{
+        position: 'relative',
+        display: 'grid',
+        gridTemplateColumns: '40px 1fr',
+        gap: 32,
+        paddingBottom: isLast ? 0 : 56,
+      }}
+    >
+      {/* node */}
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          border: '1px solid #2A2A2A',
+          background: '#0B0B0B',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'var(--font-geist-mono)',
+          fontSize: 12,
+          color: '#808080',
+          flexShrink: 0,
+          zIndex: 1,
+          transition: 'border-color 250ms ease, color 250ms ease',
+        }}
+        className="workflow-node"
+      >
+        {String(index + 1).padStart(2, '0')}
+      </div>
+
+      {/* content */}
+      <div style={{ paddingTop: 6, transition: 'transform 250ms ease' }} className="workflow-content">
+        <h3
+          style={{
+            fontSize: 'clamp(18px, 2vw, 22px)',
+            fontWeight: 600,
+            color: '#FAFAFA',
+            letterSpacing: '-0.02em',
+            marginBottom: 8,
+          }}
+        >
+          {step.title}
+        </h3>
+        <p
+          style={{
+            fontSize: 15,
+            color: '#808080',
+            lineHeight: 1.7,
+            maxWidth: 560,
+          }}
+        >
+          {step.description}
+        </p>
+      </div>
+
+      <style>{`
+        .workflow-step:hover .workflow-node {
+          border-color: #FAFAFA;
+          color: #FAFAFA;
+        }
+        .workflow-step:hover .workflow-content {
+          transform: translateX(4px);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .workflow-content { transition: none !important; }
+        }
+      `}</style>
+    </div>
   )
 }
