@@ -10,9 +10,11 @@ import {
   VideoIcon,
   Palette,
   Volume2,
-  Sparkles,
   ArrowUpRight,
   LucideIcon,
+  TrendingUp,
+  Target,
+  Clapperboard,
 } from 'lucide-react'
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -24,6 +26,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Video: VideoIcon,
   Palette,
   Volume2,
+  TrendingUp,
+  Target,
+  Clapperboard,
 }
 
 interface ServiceData {
@@ -39,13 +44,43 @@ interface ServicesProps {
   services: ServiceData[]
 }
 
+const DEFAULT_SERVICES: ServiceData[] = [
+  {
+    id: 'default-1',
+    title: 'Retention-Driven Editing (YouTube/Podcasts)',
+    description:
+      'Pacing, pattern interrupts, sound design, and custom graphics engineered to maximize watch time and subscriber conversion.',
+    icon: 'TrendingUp',
+    size: 'large',
+    order: 1,
+  },
+  {
+    id: 'default-2',
+    title: 'High-ROAS Social Ad Creatives (Meta/TikTok)',
+    description:
+      'Scroll-stopping hooks, fast-cut narrative edits, and direct-response text overlays designed to lower CAC and scale ad spend.',
+    icon: 'Target',
+    size: 'medium',
+    order: 2,
+  },
+  {
+    id: 'default-3',
+    title: 'Cinematic Color Grading (DaVinci Resolve)',
+    description:
+      'Custom LUT development, skin tone perfection, and film look emulation to elevate raw footage into high-budget visual storytelling.',
+    icon: 'Clapperboard',
+    size: 'medium',
+    order: 3,
+  },
+]
+
 function ServiceCard({ service }: { service: ServiceData }) {
   const Icon = service.icon ? ICON_MAP[service.icon] ?? Film : Film
   const isLarge = service.size === 'large'
   const isMedium = service.size === 'medium'
 
   const gridSpan = isLarge
-    ? 'col-span-1 md:col-span-2 lg:col-span-2 md:row-span-2'
+    ? 'col-span-1 md:col-span-2 lg:col-span-2'
     : isMedium
     ? 'col-span-1 md:col-span-2 lg:col-span-1'
     : 'col-span-1'
@@ -78,32 +113,13 @@ function ServiceCard({ service }: { service: ServiceData }) {
           </p>
         )}
       </div>
-
     </div>
   )
 }
 
 export function Services({ services }: ServicesProps) {
-  if (!services || services.length === 0) {
-    return (
-      <section id="services" className="py-24">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-16 w-full border-t border-neutral-800/80" />
-          <SectionLabel>Services</SectionLabel>
-          <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-800 bg-neutral-900/20 py-20 text-center">
-            <Sparkles className="mb-3 h-8 w-8 text-neutral-600" />
-            <p className="text-sm text-neutral-500">
-              No services found. Add your services in the CMS.
-            </p>
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  const sorted = [...services].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0)
-  )
+  const displayServices = services && services.length > 0 ? services : DEFAULT_SERVICES
+  const sorted = [...displayServices].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
   return (
     <section id="services" className="py-24 text-neutral-100">
@@ -113,11 +129,11 @@ export function Services({ services }: ServicesProps) {
         <div className="mb-14 flex flex-col gap-3">
           <SectionLabel>Services</SectionLabel>
           <h2 className="text-3xl font-semibold tracking-tight text-neutral-50 sm:text-4xl md:text-5xl">
-            What I Do
+            Outcome-Driven Deliverables
           </h2>
         </div>
 
-        <div className="grid auto-rows-[minmax(220px,auto)] grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid auto-rows-[minmax(220px,auto)] grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {sorted.map((service) => (
             <ServiceCard key={service.id} service={service} />
           ))}

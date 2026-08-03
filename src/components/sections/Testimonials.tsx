@@ -1,4 +1,5 @@
-"use client"
+'use client'
+
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { SectionLabel } from '@/components/ui/SectionLabel'
@@ -24,14 +25,13 @@ interface TestimonialsProps {
 
 function TestimonialItem({ t, index }: { t: TestimonialData; index: number }) {
   const photoUrl = t.photo?.url ? getMediaUrl(t.photo.url) : null
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const reduceMotion = typeof window !== 'undefined' ? false : true
+  const reducedMotion = useReducedMotion()
 
   return (
     <motion.article
-      className="testimonial"
+      className="testimonial border-b border-neutral-800/80 pb-16 pt-12 first:pt-0 last:border-b-0"
       aria-label={`Testimonial from ${t.name}`}
-      initial={{ opacity: 0, y: 24 }}
+      initial={reducedMotion ? {} : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.6, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
@@ -40,140 +40,62 @@ function TestimonialItem({ t, index }: { t: TestimonialData; index: number }) {
         style={{
           display: 'grid',
           gridTemplateColumns: t.videoYoutubeId ? '1fr 480px' : '1fr',
-          gap: 80,
+          gap: 64,
           alignItems: 'start',
         }}
         className="testimonial-grid"
       >
-        {/* Content */}
         <div>
-          {/* Large decorative quote mark */}
-          <div style={{ fontSize: 96, lineHeight: 0.8, color: '#2A2A2A', fontFamily: 'Georgia, serif', marginBottom: 16, userSelect: 'none' }} aria-hidden>
+          <div className="text-6xl font-serif text-neutral-700 leading-none select-none mb-4" aria-hidden>
             &ldquo;
           </div>
-          <blockquote
-            style={{
-              fontSize: 'clamp(18px, 2.5vw, 28px)',
-              color: '#FAFAFA',
-              fontWeight: 400,
-              lineHeight: 1.55,
-              letterSpacing: '-0.01em',
-              fontStyle: 'italic',
-              marginBottom: 40,
-              quotes: '"\\201C""\\201D"',
-            }}
-          >
+          <blockquote className="text-xl sm:text-2xl md:text-3xl font-normal text-neutral-100 leading-relaxed tracking-tight italic mb-8">
             &ldquo;{t.quote}&rdquo;
           </blockquote>
 
-          {/* Author */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="flex items-center gap-4 flex-wrap">
             {photoUrl && (
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  flexShrink: 0,
-                  position: 'relative',
-                }}
-              >
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-neutral-700">
                 <Image
                   src={photoUrl}
                   alt={t.photo?.alt ?? t.name}
                   fill
-                  sizes="44px"
-                  style={{ objectFit: 'cover' }}
+                  sizes="48px"
+                  className="object-cover"
                 />
               </div>
             )}
             <div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#FAFAFA' }}>
-                {t.name}
-              </div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-geist-mono)',
-                  fontStyle: 'italic',
-                  fontSize: 11,
-                  color: '#808080',
-                  marginTop: 2,
-                  letterSpacing: '0.04em',
-                }}
-              >
+              <div className="text-base font-semibold text-neutral-100">{t.name}</div>
+              <div className="font-mono italic text-xs text-neutral-400 mt-0.5 tracking-wide">
                 {[t.role, t.company].filter(Boolean).join(' · ')}
               </div>
             </div>
+
+            {t.result && (
+              <div className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="font-mono text-xs font-semibold text-emerald-400 tracking-wider">
+                  {t.result}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Meta */}
-          {(t.project || t.result) && (
-            <div
-              style={{
-                display: 'flex',
-                gap: 24,
-                marginTop: 32,
-                paddingTop: 24,
-                borderTop: '1px solid #2A2A2A',
-              }}
-            >
-              {t.project && (
-                <div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-geist-mono)',
-                      fontStyle: 'italic',
-                      fontSize: 9,
-                      color: '#606060',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Project
-                  </div>
-                  <div style={{ fontSize: 13, color: '#C2C2C2' }}>{t.project}</div>
-                </div>
-              )}
-              {t.result && (
-                <div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-geist-mono)',
-                      fontStyle: 'italic',
-                      fontSize: 9,
-                      color: '#606060',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Result
-                  </div>
-                  <div style={{ fontSize: 13, color: '#5EEA7A', fontWeight: 600 }}>
-                    {t.result}
-                  </div>
-                </div>
-              )}
+          {t.project && (
+            <div className="mt-6 pt-6 border-t border-neutral-800/60 flex items-center gap-4">
+              <span className="font-mono italic text-xs text-neutral-400 uppercase tracking-widest">
+                Project
+              </span>
+              <span className="text-sm text-neutral-300">{t.project}</span>
             </div>
           )}
         </div>
 
-        {/* Optional video testimonial */}
         {t.videoYoutubeId && (
           <VideoCard youtubeId={t.videoYoutubeId} title={`${t.name}'s testimonial`} />
         )}
       </div>
-
-      <style>{`
-        @media (max-width: 1024px) {
-          .testimonial-grid {
-            grid-template-columns: 1fr !important;
-            gap: 40px !important;
-          }
-        }
-      `}</style>
     </motion.article>
   )
 }
@@ -183,9 +105,9 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
     return (
       <section id="testimonials" className="section" aria-label="Testimonials">
         <div className="container">
-          <hr className="divider" style={{ marginBottom: 80 }} />
+          <hr className="divider mb-20" />
           <SectionLabel>Testimonials</SectionLabel>
-          <p style={{ color: '#808080', fontStyle: 'italic', marginTop: 24 }}>
+          <p className="text-neutral-400 italic mt-6">
             Add your first testimonial in the CMS.
           </p>
         </div>
@@ -194,24 +116,15 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
   }
 
   return (
-    <section id="testimonials" className="section" aria-label="Client Testimonials">
+    <section id="testimonials" className="section text-neutral-100" aria-label="Client Testimonials">
       <div className="container">
-        <hr className="divider" style={{ marginBottom: 80 }} />
+        <hr className="divider mb-20" />
         <SectionLabel>Testimonials</SectionLabel>
-        <h2
-          style={{
-            fontSize: 'clamp(28px, 4vw, 48px)',
-            fontWeight: 600,
-            color: '#FAFAFA',
-            letterSpacing: '-0.03em',
-            marginBottom: 64,
-            marginTop: 8,
-          }}
-        >
+        <h2 className="text-3xl font-semibold tracking-tight text-neutral-50 sm:text-4xl md:text-5xl mt-2 mb-16">
           Results Clients Can&apos;t Stop Talking About
         </h2>
 
-        <div>
+        <div className="flex flex-col gap-12">
           {testimonials.map((t, i) => (
             <TestimonialItem key={t.id} t={t} index={i} />
           ))}

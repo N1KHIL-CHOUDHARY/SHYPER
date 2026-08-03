@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Play, X } from 'lucide-react'
+import { ArrowRight, Play, X, Film } from 'lucide-react'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { getMediaUrl } from '@/lib/utils'
 import { SkeletonProjectRow } from '@/components/ui/SkeletonCard'
@@ -25,6 +25,8 @@ interface ProjectData {
   index?: number | null
   accentColor?: string | null
   resultBadge?: string | null
+  aspectRatio?: '16:9' | '9:16' | string | null
+  previewVideoUrl?: string | null
   results?: Array<{ metric: string; value: string }> | null
 }
 
@@ -34,10 +36,8 @@ interface WorkProps {
 
 function getYouTubeEmbedUrl(project: ProjectData) {
   const url = project.youtubeUrl
-  const id  = project.youtubeId
-  // Try direct ID first (youtubeId field)
+  const id = project.youtubeId
   if (id && id.length === 11) return `https://www.youtube.com/embed/${id}?autoplay=1`
-  // Fall back to parsing URL
   if (!url) return null
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
   const match = url.match(regExp)
@@ -55,14 +55,13 @@ export function Work({ projects }: WorkProps) {
     [projects]
   )
 
-  // Build category list
   const categories = useMemo(() => {
     const cats = Array.from(new Set(gridItems.map((p) => p.category).filter(Boolean))) as string[]
     return cats.length > 1 ? ['All', ...cats] : []
   }, [gridItems])
 
   const filtered = useMemo(
-    () => activeFilter === 'All' ? gridItems : gridItems.filter((p) => p.category === activeFilter),
+    () => (activeFilter === 'All' ? gridItems : gridItems.filter((p) => p.category === activeFilter)),
     [gridItems, activeFilter]
   )
 
@@ -84,7 +83,6 @@ export function Work({ projects }: WorkProps) {
           </span>
         </div>
 
-        {/* Category filter */}
         {categories.length > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 40 }}>
             {categories.map((cat) => (
@@ -111,7 +109,7 @@ export function Work({ projects }: WorkProps) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-start">
           <AnimatePresence mode="popLayout">
             {filtered.map((project, i) => (
               <ProjectCard
@@ -176,14 +174,25 @@ function ProjectCard({
   onOpenVideo: (embedUrl: string) => void
 }) {
   const reducedMotion = useReducedMotion()
+  const [isHovered, setIsHovered] = useState(false)
   const imageUrl = project.thumbnail?.url ? getMediaUrl(project.thumbnail.url) : ''
   const embedUrl = getYouTubeEmbedUrl(project)
   const displayIndex = project.index ?? i + 1
   const accent = project.accentColor || undefined
-  // Derive result badge: explicit field first, then first result from array
-  const badge = project.resultBadge || project.results?.[0]?.value
-    ? (project.resultBadge ?? `${project.results?.[0]?.value} ${project.results?.[0]?.metric ?? ''}`.trim())
-    : null
+
+  const badge =
+    project.resultBadge ||
+    (project.results?.[0]?.value
+      ? `${project.results[0].value} ${project.results[0].metric ?? ''}`.trim()
+      : '+2.4M Views')
+
+  const isVertical =
+    project.aspectRatio === '9:16' ||
+    project.category === 'Shorts' ||
+    project.category === 'Reels' ||
+    project.category === 'TikTok'
+
+  const aspectClass = isVertical ? 'aspect-[9/16]' : 'aspect-video'
 
   return (
     <motion.article
@@ -193,57 +202,62 @@ function ProjectCard({
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="group flex flex-col"
     >
-      {/* Media — 16:9 video-player-style frame */}
       <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onClick={() => embedUrl && onOpenVideo(embedUrl)}
-        className={`relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-800 transition-all duration-300 ease-in-out group-hover:border-neutral-700 group-hover:-translate-y-1 ${
+        className={`relative w-full ${aspectClass} rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 transition-all duration-300 ease-in-out group-hover:border-neutral-700 group-hover:-translate-y-1 ${
           embedUrl ? 'cursor-pointer' : ''
         }`}
       >
         {imageUrl ? (
-          <>
-            <Image
-              src={imageUrl}
-              alt={project.thumbnail?.alt ?? project.title}
-              fill
-              className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
-
-            {embedUrl && (
-              <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="w-11 h-11 rounded-full bg-white/95 text-black flex items-center justify-center">
-                  <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                </div>
-              </div>
-            )}
-
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
-              {accent && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} aria-hidden />}
-              <span className="font-mono italic text-[10px] text-neutral-200 tracking-widest">
-                {String(displayIndex).padStart(2, '0')}
-              </span>
-            </div>
-
-            {/* Result badge */}
-            {badge && (
-              <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/10">
-                <span className="font-mono italic text-[10px] text-[#5EEA7A] tracking-widest">{badge}</span>
-              </div>
-            )}
-          </>
+          <Image
+            src={imageUrl}
+            alt={project.thumbnail?.alt ?? project.title}
+            fill
+            className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-neutral-700">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <rect x="2" y="2" width="20" height="20" rx="2"/>
-              <path d="M7 2v20M17 2v20M2 12h20M2 7h5M17 7h5M2 17h5M17 17h5"/>
-            </svg>
-            <span className="font-mono text-[10px] tracking-widest uppercase">No Preview</span>
+          <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 border border-neutral-800 flex flex-col items-center justify-center gap-2 text-neutral-600">
+            <Film className="w-8 h-8 opacity-40" />
+            <span className="font-mono text-[10px] tracking-widest uppercase">Video Preview</span>
+          </div>
+        )}
+
+        {isHovered && project.previewVideoUrl && (
+          <video
+            src={project.previewVideoUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-10"
+          />
+        )}
+
+        {embedUrl && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+            </div>
+          </div>
+        )}
+
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10">
+          {accent && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} aria-hidden />}
+          <span className="font-mono italic text-[10px] text-neutral-200 tracking-widest">
+            {String(displayIndex).padStart(2, '0')}
+          </span>
+        </div>
+
+        {badge && (
+          <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-500/40">
+            <span className="font-mono font-semibold text-[10px] text-emerald-400 tracking-wider">{badge}</span>
           </div>
         )}
       </div>
 
-      {/* Meta row */}
       <div className="mt-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <span className="font-mono italic text-[11px] text-neutral-500 uppercase tracking-widest block mb-1.5">

@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useRef } from 'react'
+import { useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
@@ -16,13 +16,13 @@ interface WorkflowData {
 }
 
 export function Workflow({ data }: { data: WorkflowData }) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerNode, setContainerNode] = useState<HTMLDivElement | null>(null)
   const reducedMotion = useReducedMotion()
   const steps = data.steps ?? []
 
   const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start 75%', 'end 40%'],
+    target: containerNode ? { current: containerNode } : undefined,
+    offset: ['start end', 'end start'],
   })
 
   const lineHeight = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
@@ -47,8 +47,7 @@ export function Workflow({ data }: { data: WorkflowData }) {
           {data.heading ?? 'My Process'}
         </h2>
 
-        <div ref={containerRef} style={{ position: 'relative' }}>
-          {/* base rail */}
+        <div ref={(node) => setContainerNode(node)} style={{ position: 'relative' }}>
           <div
             style={{
               position: 'absolute',
@@ -60,7 +59,6 @@ export function Workflow({ data }: { data: WorkflowData }) {
             }}
             aria-hidden="true"
           />
-          {/* fill rail — the one scroll animation */}
           <motion.div
             style={{
               position: 'absolute',
@@ -97,7 +95,6 @@ function Step({ step, index, isLast }: { step: WorkflowStep; index: number; isLa
         paddingBottom: isLast ? 0 : 56,
       }}
     >
-      {/* node */}
       <div
         style={{
           width: 40,
@@ -120,7 +117,6 @@ function Step({ step, index, isLast }: { step: WorkflowStep; index: number; isLa
         {String(index + 1).padStart(2, '0')}
       </div>
 
-      {/* content */}
       <div style={{ paddingTop: 6, transition: 'transform 250ms ease' }} className="workflow-content">
         <h3
           style={{

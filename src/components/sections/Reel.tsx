@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Play } from 'lucide-react'
 import { SectionLabel } from '@/components/ui/SectionLabel'
@@ -20,10 +20,10 @@ export function Reel({ data }: { data: ReelData }) {
 function ReelInner({ data }: { data: ReelData }) {
   const reducedMotion = useReducedMotion()
   const [playing, setPlaying] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerNode, setContainerNode] = useState<HTMLDivElement | null>(null)
 
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: containerNode ? { current: containerNode } : undefined,
     offset: ['start end', 'end start'],
   })
   const y = useTransform(scrollYProgress, [0, 1], [reducedMotion ? 0 : 40, reducedMotion ? 0 : -40])
@@ -49,7 +49,7 @@ function ReelInner({ data }: { data: ReelData }) {
           )}
         </div>
 
-        <motion.div ref={containerRef} style={{ y }} aria-label="Showreel video player">
+        <motion.div ref={(node) => setContainerNode(node)} style={{ y }} aria-label="Showreel video player">
           <div className="reel-container">
             <div className={'reel-overlay' + (playing ? ' hidden' : '')}>
               <button
