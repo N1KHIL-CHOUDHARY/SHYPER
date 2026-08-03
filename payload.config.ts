@@ -27,7 +27,10 @@ const usePostgres = process.env.DATABASE_DRIVER === 'postgres'
 
 const db = usePostgres
   ? postgresAdapter({ pool: { connectionString: process.env.DATABASE_URL! } })
-  : sqliteAdapter({ client: { url: process.env.DATABASE_URL ?? 'file:./payload.db' } })
+  : sqliteAdapter({
+      client: { url: process.env.DATABASE_URL ?? 'file:./payload.db' },
+      push: true,
+    })
 
 export default buildConfig({
   serverURL: process.env.NODE_ENV === 'development' ? '' : (process.env.NEXT_PUBLIC_SERVER_URL || ''),
