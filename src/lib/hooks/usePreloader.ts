@@ -1,29 +1,39 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const SESSION_KEY = 'syph4_preloader_shown'
 
 /**
- * Returns whether the preloader should be shown.
- * On first visit (per session) returns true; subsequent visits return false.
- * Also marks the preloader as shown so it doesn't replay.
+ * Hook for managing preloader visibility across session visits & cold refreshes.
  */
 export function usePreloader(): {
   shouldShow: boolean
   markDone: () => void
 } {
-  const [shouldShow, setShouldShow] = useState(false)
+  const [shouldShow, setShouldShow] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      // Check if current session is a page reload / cold refresh
+      const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+      const isReload = navEntries.length > 0 && navEntries[0].type === 'reload'
 
-  useEffect(() => {
-    const shown = sessionStorage.getItem(SESSION_KEY)
-    if (!shown) {
-      setShouldShow(true)
+      if (isReload) {
+        return true
+      }
+
+      return !sessionStorage.getItem(SESSION_KEY)
+    } catch {
+      return true
     }
-  }, [])
+  })
 
   function markDone() {
-    sessionStorage.setItem(SESSION_KEY, '1')
+    try {
+      sessionStorage.setItem(SESSION_KEY, '1')
+    } catch {
+      // Ignore storage errors (e.g. incognito restrictions)
+    }
     setShouldShow(false)
   }
 
