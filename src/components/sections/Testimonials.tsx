@@ -1,7 +1,10 @@
+"use client"
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { VideoCard } from '@/components/ui/VideoCard'
 import { getMediaUrl } from '@/lib/utils'
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 
 interface TestimonialData {
   id: string
@@ -19,11 +22,20 @@ interface TestimonialsProps {
   testimonials: TestimonialData[]
 }
 
-function TestimonialItem({ t }: { t: TestimonialData }) {
+function TestimonialItem({ t, index }: { t: TestimonialData; index: number }) {
   const photoUrl = t.photo?.url ? getMediaUrl(t.photo.url) : null
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const reduceMotion = typeof window !== 'undefined' ? false : true
 
   return (
-    <article className="testimonial" aria-label={`Testimonial from ${t.name}`}>
+    <motion.article
+      className="testimonial"
+      aria-label={`Testimonial from ${t.name}`}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+    >
       <div
         style={{
           display: 'grid',
@@ -35,7 +47,10 @@ function TestimonialItem({ t }: { t: TestimonialData }) {
       >
         {/* Content */}
         <div>
-          {/* Large quote */}
+          {/* Large decorative quote mark */}
+          <div style={{ fontSize: 96, lineHeight: 0.8, color: '#2A2A2A', fontFamily: 'Georgia, serif', marginBottom: 16, userSelect: 'none' }} aria-hidden>
+            &ldquo;
+          </div>
           <blockquote
             style={{
               fontSize: 'clamp(18px, 2.5vw, 28px)',
@@ -110,7 +125,7 @@ function TestimonialItem({ t }: { t: TestimonialData }) {
                       fontFamily: 'var(--font-geist-mono)',
                       fontStyle: 'italic',
                       fontSize: 9,
-                      color: '#2A2A2A',
+                      color: '#606060',
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
                       marginBottom: 4,
@@ -118,7 +133,7 @@ function TestimonialItem({ t }: { t: TestimonialData }) {
                   >
                     Project
                   </div>
-                  <div style={{ fontSize: 13, color: '#808080' }}>{t.project}</div>
+                  <div style={{ fontSize: 13, color: '#C2C2C2' }}>{t.project}</div>
                 </div>
               )}
               {t.result && (
@@ -128,7 +143,7 @@ function TestimonialItem({ t }: { t: TestimonialData }) {
                       fontFamily: 'var(--font-geist-mono)',
                       fontStyle: 'italic',
                       fontSize: 9,
-                      color: '#2A2A2A',
+                      color: '#606060',
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
                       marginBottom: 4,
@@ -136,7 +151,7 @@ function TestimonialItem({ t }: { t: TestimonialData }) {
                   >
                     Result
                   </div>
-                  <div style={{ fontSize: 13, color: '#5EEA7A', fontWeight: 500 }}>
+                  <div style={{ fontSize: 13, color: '#5EEA7A', fontWeight: 600 }}>
                     {t.result}
                   </div>
                 </div>
@@ -159,7 +174,7 @@ function TestimonialItem({ t }: { t: TestimonialData }) {
           }
         }
       `}</style>
-    </article>
+    </motion.article>
   )
 }
 
@@ -193,12 +208,12 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
             marginTop: 8,
           }}
         >
-          What Clients Say
+          Results Clients Can&apos;t Stop Talking About
         </h2>
 
         <div>
-          {testimonials.map((t) => (
-            <TestimonialItem key={t.id} t={t} />
+          {testimonials.map((t, i) => (
+            <TestimonialItem key={t.id} t={t} index={i} />
           ))}
         </div>
       </div>

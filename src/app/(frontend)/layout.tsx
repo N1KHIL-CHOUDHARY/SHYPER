@@ -5,6 +5,8 @@ import { getPayloadClient } from '@/lib/payload'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { PreloaderClient } from '@/components/layout/PreloaderClient'
+import { CustomCursor } from '@/components/ui/CustomCursor'
+import { MobileCTA } from '@/components/ui/MobileCTA'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -58,6 +60,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
+        <CustomCursor />
         <PreloaderClient />
         <Navbar items={navItems} siteName={siteName} />
         <main id="main-content" tabIndex={-1} style={{ outline: 'none' }}>
@@ -70,6 +73,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
           footerNote={footerNote}
           socials={socials}
         />
+        <MobileCTA />
       </body>
     </html>
   )

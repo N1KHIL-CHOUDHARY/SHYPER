@@ -3,7 +3,9 @@
 
 import type { ImportMap } from 'payload'
 import { BeforeDashboard } from '@/payload/components/BeforeDashboard'
+import { CollectionCards } from '@payloadcms/next/rsc'
 
 export const importMap: ImportMap = {
   '@/payload/components/BeforeDashboard#BeforeDashboard': BeforeDashboard,
+  '@payloadcms/next/rsc#CollectionCards': CollectionCards,
 }

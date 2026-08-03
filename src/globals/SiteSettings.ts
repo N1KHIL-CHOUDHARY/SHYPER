@@ -84,5 +84,36 @@ export const SiteSettings: GlobalConfig = {
       label: 'Footer Copyright Note',
       defaultValue: '© 2026 SYPH4. All rights reserved.',
     },
+    {
+      name: 'clientLogos',
+      type: 'array',
+      label: 'Client / Brand Logos',
+      admin: {
+        description: 'Logos shown in the marquee strip. Use white/transparent PNGs for best results on dark background.',
+      },
+      fields: [
+        { name: 'name', type: 'text', required: true, label: 'Brand / Channel Name' },
+        { name: 'logo', type: 'upload', relationTo: 'media', label: 'Logo Image' },
+      ],
+    },
+    {
+      name: 'reelYoutubeId',
+      type: 'text',
+      label: 'Showreel YouTube ID (Reel Section)',
+      admin: {
+        description: 'YouTube ID for the dedicated showreel section (distinct from the hero). e.g. dQw4w9WgXcQ',
+      },
+    },
+    {
+      name: 'reelHeading',
+      type: 'text',
+      label: 'Showreel Section Heading',
+      defaultValue: 'The Work Speaks.',
+    },
+    {
+      name: 'reelSubtext',
+      type: 'text',
+      label: 'Showreel Section Subtext',
+    },
   ],
 }

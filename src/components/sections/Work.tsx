@@ -19,19 +19,27 @@ interface ProjectData {
   thumbnail?: { url?: string | null; alt?: string | null } | null
   tags?: Array<{ tag?: string | null }> | null
   youtubeUrl?: string | null
+  youtubeId?: string | null
   showOnHomepage?: boolean | null
   order?: number | null
   index?: number | null
   accentColor?: string | null
+  resultBadge?: string | null
+  results?: Array<{ metric: string; value: string }> | null
 }
 
 interface WorkProps {
   projects: ProjectData[]
 }
 
-function getYouTubeEmbedUrl(url?: string | null) {
+function getYouTubeEmbedUrl(project: ProjectData) {
+  const url = project.youtubeUrl
+  const id  = project.youtubeId
+  // Try direct ID first (youtubeId field)
+  if (id && id.length === 11) return `https://www.youtube.com/embed/${id}?autoplay=1`
+  // Fall back to parsing URL
   if (!url) return null
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
   const match = url.match(regExp)
   return match && match[2].length === 11
     ? `https://www.youtube.com/embed/${match[2]}?autoplay=1`
@@ -40,10 +48,22 @@ function getYouTubeEmbedUrl(url?: string | null) {
 
 export function Work({ projects }: WorkProps) {
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null)
+  const [activeFilter, setActiveFilter] = useState<string>('All')
 
   const gridItems = useMemo(
     () => projects.filter((p) => p.showOnHomepage).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [projects]
+  )
+
+  // Build category list
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(gridItems.map((p) => p.category).filter(Boolean))) as string[]
+    return cats.length > 1 ? ['All', ...cats] : []
+  }, [gridItems])
+
+  const filtered = useMemo(
+    () => activeFilter === 'All' ? gridItems : gridItems.filter((p) => p.category === activeFilter),
+    [gridItems, activeFilter]
   )
 
   if (gridItems.length === 0) return null
@@ -56,7 +76,7 @@ export function Work({ projects }: WorkProps) {
           <div>
             <SectionLabel>Selected Work</SectionLabel>
             <h2 className="text-[clamp(28px,4vw,48px)] font-semibold text-neutral-50 tracking-tight leading-tight mt-2">
-              Project Archive
+              Recent Projects
             </h2>
           </div>
           <span className="font-mono italic text-xs text-neutral-600 tracking-wider">
@@ -64,15 +84,44 @@ export function Work({ projects }: WorkProps) {
           </span>
         </div>
 
+        {/* Category filter */}
+        {categories.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 40 }}>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveFilter(cat)}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 100,
+                  border: `1px solid ${activeFilter === cat ? '#FAFAFA' : '#2A2A2A'}`,
+                  background: activeFilter === cat ? '#FAFAFA' : 'transparent',
+                  color: activeFilter === cat ? '#0B0B0B' : '#808080',
+                  fontFamily: 'var(--font-geist-mono)',
+                  fontStyle: 'italic',
+                  fontSize: 11,
+                  letterSpacing: '0.08em',
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {gridItems.map((project, i) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              i={i}
-              onOpenVideo={(url) => setActiveVideo({ url, title: project.title })}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filtered.map((project, i) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                i={i}
+                onOpenVideo={(url) => setActiveVideo({ url, title: project.title })}
+              />
+            ))}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -88,10 +137,10 @@ export function Work({ projects }: WorkProps) {
             />
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              initial={{ opacity: 0, scale: 0.88, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.88, y: 20 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="relative w-full max-w-5xl aspect-video bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl z-10"
             >
               <button
@@ -128,9 +177,13 @@ function ProjectCard({
 }) {
   const reducedMotion = useReducedMotion()
   const imageUrl = project.thumbnail?.url ? getMediaUrl(project.thumbnail.url) : ''
-  const embedUrl = getYouTubeEmbedUrl(project.youtubeUrl)
+  const embedUrl = getYouTubeEmbedUrl(project)
   const displayIndex = project.index ?? i + 1
   const accent = project.accentColor || undefined
+  // Derive result badge: explicit field first, then first result from array
+  const badge = project.resultBadge || project.results?.[0]?.value
+    ? (project.resultBadge ?? `${project.results?.[0]?.value} ${project.results?.[0]?.metric ?? ''}`.trim())
+    : null
 
   return (
     <motion.article
@@ -171,10 +224,21 @@ function ProjectCard({
                 {String(displayIndex).padStart(2, '0')}
               </span>
             </div>
+
+            {/* Result badge */}
+            {badge && (
+              <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/10">
+                <span className="font-mono italic text-[10px] text-[#5EEA7A] tracking-widest">{badge}</span>
+              </div>
+            )}
           </>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-neutral-700 font-mono text-xs">
-            NO IMAGE
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-neutral-700">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="2" y="2" width="20" height="20" rx="2"/>
+              <path d="M7 2v20M17 2v20M2 12h20M2 7h5M17 7h5M2 17h5M17 17h5"/>
+            </svg>
+            <span className="font-mono text-[10px] tracking-widest uppercase">No Preview</span>
           </div>
         )}
       </div>
@@ -203,7 +267,7 @@ function ProjectCard({
       {project.tags && project.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {project.tags.slice(0, 4).map((t, idx) => (
-            <span key={idx} className="px-2.5 py-1 rounded-full border border-neutral-800 text-[10px] text-neutral-500">
+            <span key={idx} className="px-2.5 py-1 rounded-full border border-neutral-700 text-[10px] text-neutral-400">
               {t.tag}
             </span>
           ))}

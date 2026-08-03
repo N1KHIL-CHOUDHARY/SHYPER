@@ -79,9 +79,6 @@ function ServiceCard({ service }: { service: ServiceData }) {
         )}
       </div>
 
-      <div className="mt-8 flex items-center gap-2 text-xs font-medium tracking-wide text-neutral-500 uppercase transition-colors duration-300 group-hover:text-neutral-400">
-        <span>Service Detail</span>
-      </div>
     </div>
   )
 }

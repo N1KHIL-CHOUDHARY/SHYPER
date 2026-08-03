@@ -1,9 +1,9 @@
-import { Suspense } from 'react'
+﻿import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getPayloadClient } from '@/lib/payload'
-
-// Sections
 import { Hero }         from '@/components/sections/Hero'
+import { Reel }         from '@/components/sections/Reel'
+import { ClientLogos }  from '@/components/sections/ClientLogos'
 import { About }        from '@/components/sections/About'
 import { Work, WorkSkeleton } from '@/components/sections/Work'
 import { Workflow }     from '@/components/sections/Workflow'
@@ -30,12 +30,23 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-// ─── Data Fetchers (individual — for Suspense streaming) ─────────────────────
-
 async function HeroSection() {
   const payload = await getPayloadClient()
   const data = await payload.findGlobal({ slug: 'hero', depth: 2 }).catch(() => null)
   return <Hero data={(data as any) ?? {}} />
+}
+
+async function ReelSection() {
+  const payload = await getPayloadClient()
+  const settings = await payload.findGlobal({ slug: 'site-settings', depth: 0 }).catch(() => null) as any
+  return <Reel data={{ reelYoutubeId: settings?.reelYoutubeId ?? null, heading: settings?.reelHeading ?? null, subtext: settings?.reelSubtext ?? null }} />
+}
+
+async function ClientLogosSection() {
+  const payload = await getPayloadClient()
+  const settings = await payload.findGlobal({ slug: 'site-settings', depth: 1 }).catch(() => null) as any
+  const logos = (settings?.clientLogos ?? []).map((l: any, i: number) => ({ id: String(i), name: l.name, logo: l.logo ?? null }))
+  return <ClientLogos logos={logos} />
 }
 
 async function AboutSection() {
@@ -64,34 +75,19 @@ async function WorkflowSection() {
 
 async function ServicesSection() {
   const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'services',
-    sort: 'order',
-    limit: 12,
-    depth: 0,
-  }).catch(() => ({ docs: [] }))
+  const result = await payload.find({ collection: 'services', sort: 'order', limit: 12, depth: 0 }).catch(() => ({ docs: [] }))
   return <Services services={result.docs as any[]} />
 }
 
 async function TestimonialsSection() {
   const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'testimonials',
-    sort: 'order',
-    limit: 10,
-    depth: 1,
-  }).catch(() => ({ docs: [] }))
+  const result = await payload.find({ collection: 'testimonials', sort: 'order', limit: 10, depth: 1 }).catch(() => ({ docs: [] }))
   return <Testimonials testimonials={result.docs as any[]} />
 }
 
 async function FAQSection() {
   const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'faq',
-    sort: 'order',
-    limit: 20,
-    depth: 0,
-  }).catch(() => ({ docs: [] }))
+  const result = await payload.find({ collection: 'faq', sort: 'order', limit: 20, depth: 0 }).catch(() => ({ docs: [] }))
   return <FAQ items={result.docs as any[]} />
 }
 
@@ -101,42 +97,19 @@ async function ContactSection() {
   return <Contact data={(data as any) ?? {}} />
 }
 
-// ─── Home Page ───────────────────────────────────────────────────────────────
-
 export default function HomePage() {
   return (
     <>
-      <Suspense fallback={null}>
-        <HeroSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <AboutSection />
-      </Suspense>
-
-      <Suspense fallback={<WorkSkeleton />}>
-        <WorkSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <WorkflowSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <ServicesSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <TestimonialsSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <FAQSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <ContactSection />
-      </Suspense>
+      <Suspense fallback={null}><HeroSection /></Suspense>
+      <Suspense fallback={null}><ReelSection /></Suspense>
+      <Suspense fallback={null}><ClientLogosSection /></Suspense>
+      <Suspense fallback={null}><AboutSection /></Suspense>
+      <Suspense fallback={<WorkSkeleton />}><WorkSection /></Suspense>
+      <Suspense fallback={null}><WorkflowSection /></Suspense>
+      <Suspense fallback={null}><ServicesSection /></Suspense>
+      <Suspense fallback={null}><TestimonialsSection /></Suspense>
+      <Suspense fallback={null}><FAQSection /></Suspense>
+      <Suspense fallback={null}><ContactSection /></Suspense>
     </>
   )
 }

@@ -5,14 +5,15 @@ export const Hero: GlobalConfig = {
   label: 'Hero Section',
   admin: {
     group: 'Site Content',
-    description: 'The first thing visitors see — keep it minimal and impactful.',
+    description: 'The first thing visitors see - keep it minimal and impactful.',
   },
   fields: [
     {
       name: 'greeting',
       type: 'text',
-      defaultValue: "Hi, I'm",
+      defaultValue: '',
       label: 'Greeting Line',
+      admin: { description: 'Leave blank to hide.' },
     },
     {
       name: 'name',
@@ -20,6 +21,15 @@ export const Hero: GlobalConfig = {
       required: true,
       defaultValue: 'SYPH4',
       label: 'Name / Handle',
+    },
+    {
+      name: 'icpLine',
+      type: 'text',
+      label: 'ICP Line',
+      defaultValue: 'I edit for YouTube creators, brands and music artists.',
+      admin: {
+        description: 'One line describing WHO you work with. Shown below the name.',
+      },
     },
     {
       name: 'roles',
@@ -41,7 +51,24 @@ export const Hero: GlobalConfig = {
       name: 'tagline',
       type: 'textarea',
       label: 'Tagline',
-      defaultValue: "Helping creators produce videos people can't stop watching.",
+      defaultValue: 'Videos people cannot stop watching, cuts that convert viewers into fans.',
+    },
+    {
+      name: 'availableForWork',
+      type: 'checkbox',
+      label: 'Show Available dot',
+      defaultValue: true,
+      admin: {
+        description: 'Shows a pulsing green dot. Disable when fully booked.',
+      },
+    },
+    {
+      name: 'reelYoutubeId',
+      type: 'text',
+      label: 'Showreel YouTube ID',
+      admin: {
+        description: 'YouTube video ID e.g. dQw4w9WgXcQ. Leave blank to hide.',
+      },
     },
     {
       name: 'portrait',
@@ -54,8 +81,8 @@ export const Hero: GlobalConfig = {
       type: 'group',
       label: 'Primary Button',
       fields: [
-        { name: 'label', type: 'text', defaultValue: 'View Work' },
-        { name: 'href',  type: 'text', defaultValue: '#work' },
+        { name: 'label', type: 'text', defaultValue: 'Watch My Reel' },
+        { name: 'href',  type: 'text', defaultValue: '#reel' },
       ],
     },
     {
@@ -63,7 +90,7 @@ export const Hero: GlobalConfig = {
       type: 'group',
       label: 'Secondary Button',
       fields: [
-        { name: 'label', type: 'text', defaultValue: 'Book a Call' },
+        { name: 'label', type: 'text', defaultValue: 'Start a Project' },
         { name: 'href',  type: 'text', defaultValue: '#contact' },
       ],
     },

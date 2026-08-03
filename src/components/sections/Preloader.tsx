@@ -134,8 +134,7 @@ export function Preloader() {
   const isComplete = progress >= 100
 
   return (
-    <div className='h-[1000px] w-[1000px]'>
-      <AnimatePresence onExitComplete={handleExitComplete}>
+    <AnimatePresence onExitComplete={handleExitComplete}>
       {!isExiting && (
         <motion.div
           key="preloader-overlay"
@@ -162,7 +161,6 @@ export function Preloader() {
                 <span className="block text-[12px] tracking-[0.24em] text-[#707070] uppercase">
                   Project Sequence
                 </span>
-                
               </div>
               <span className="shrink-0 text-[11px] text-[#707070] tracking-[0.15em] tabular-nums">
                 {String(Math.round(progress)).padStart(2, '0')}:
@@ -174,7 +172,7 @@ export function Preloader() {
             <div className="mb-9 rounded-md bg-[#0B0B0B] p-6 border border-[#232323]">
               <div className="mb-5 flex items-center justify-between gap-4 text-xs min-h-[1.4em]">
                 <span className="flex items-center text-[#808080] min-w-0 truncate">
-                  <span className="text-[#585858] m-2 shrink-0" style={{margin:"0px 0px 0px 4px"}}>status</span>
+                  <span className="text-[#585858] shrink-0" style={{ marginRight: 4 }}>status</span>
                   <span className="text-[#FAFAFA] font-medium truncate">{activeStepMessage}</span>
                   {!isComplete && <BlinkingCursor />}
                 </span>
@@ -248,6 +246,5 @@ export function Preloader() {
         </motion.div>
       )}
     </AnimatePresence>
-    </div>
   )
 }
